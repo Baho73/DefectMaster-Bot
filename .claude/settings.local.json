@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Task",
+      "WebFetch",
+      "WebSearch",
+      "NotebookEdit",
+      "Bash(chmod:*)",
+      "Bash(tree:*)",
+      "Bash(python test_telegram.py:*)",
+      "Bash(python:*)",
+      "Bash(pip install:*)",
+      "Bash(timeout 180 tail:*)",
+      "Bash(nul)",
+      "Bash(ping:*)",
+      "Bash(timeout /t 1 /nobreak)",
+      "Bash(ver:*)",
+      "Bash(timeout /t 30 /nobreak)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

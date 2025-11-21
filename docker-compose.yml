@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: defectmaster-bot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./service-account.json:/app/service-account.json:ro
+      - ./photos:/app/photos
+    environment:
+      - DATABASE_PATH=/app/data/bot.db
+      - GOOGLE_SERVICE_ACCOUNT_FILE=/app/service-account.json
+      - PHOTO_STORAGE_PATH=/app/photos
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

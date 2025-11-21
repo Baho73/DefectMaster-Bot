@@ -1,0 +1,26 @@
+[Unit]
+Description=DefectMaster Telegram Bot - AI Construction Supervisor
+After=network.target
+
+[Service]
+Type=simple
+User=youruser
+Group=yourgroup
+WorkingDirectory=/path/to/Stroykontrol_mvp_01
+Environment="PATH=/path/to/Stroykontrol_mvp_01/venv/bin"
+ExecStart=/path/to/Stroykontrol_mvp_01/venv/bin/python main.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=defectmaster-bot
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/path/to/Stroykontrol_mvp_01
+
+[Install]
+WantedBy=multi-user.target

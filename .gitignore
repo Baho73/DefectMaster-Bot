@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment
+.env
+*.db
+*.sqlite3
+
+# Google credentials
+service-account.json
+credentials.json
+token.json
+
+# Private deployment instructions (contains passwords!)
+DEPLOYMENT_PRIVATE.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Photos storage
+photos/
+
+# Temporary files
+nul
+
+# OS
+.DS_Store
+Thumbs.db

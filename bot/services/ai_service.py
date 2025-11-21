@@ -1,0 +1,254 @@
+"""
+AI Service for analyzing construction photos using Google Gemini
+"""
+import json
+import google.generativeai as genai
+from typing import Dict, Any, Optional
+from PIL import Image
+import io
+import logging
+import config
+from bot.services.settings_service import settings_service
+
+logger = logging.getLogger(__name__)
+
+
+class AIService:
+    """Service for analyzing construction defects using Google Gemini"""
+
+    SYSTEM_PROMPT = """РОЛЬ:
+Ты — строгий и опытный инженер строительного контроля (Технадзор) в РФ. Твоя цель — найти нарушения, оценить их критичность и сослаться на нормы.
+
+ЗАДАЧА:
+1. Проверь, является ли фото строительным. Если это кот, еда, селфи или явный мусор — верни "is_relevant": false и шутливый комментарий.
+2. Если это стройка, используй предоставленный пользователем контекст (Объект/Место).
+3. Найди дефекты. Для каждого дефекта определи:
+   - Наименование.
+   - Точное местонахождение на фото.
+   - Критичность (Критический / Значительный / Малозначительный).
+   - Вероятная причина.
+   - Нарушенная норма РФ (СП, ГОСТ, СНиП, Приказ Минтруда). Обязательно укажи номер пункта.
+   - Рекомендация по устранению (императив: "Сделать", "Устранить").
+4. Сформируй краткое экспертное заключение по фото.
+
+ФОРМАТ ОТВЕТА (JSON):
+{
+  "is_relevant": true,
+  "joke": null,
+  "items": [
+    {
+      "defect": "Название дефекта",
+      "location": "Где именно на фото",
+      "criticality": "Критический",
+      "cause": "Причина",
+      "norm": "СП 70.13330 п. 5.17.4",
+      "recommendation": "Текст рекомендации"
+    }
+  ],
+  "expert_summary": "Текст заключения (2-3 предложения)."
+}
+
+Если фото нерелевантно:
+{
+  "is_relevant": false,
+  "joke": "Красивый кот, но это не стройплощадка! Присылай фото строительных работ.",
+  "items": [],
+  "expert_summary": null
+}
+
+ВАЖНО: Отвечай ТОЛЬКО валидным JSON. Никакого дополнительного текста."""
+
+    def __init__(self):
+        genai.configure(api_key=config.GOOGLE_API_KEY)
+
+        # Быстрая модель для проверки релевантности
+        self.fast_model = genai.GenerativeModel(
+            config.GEMINI_FAST_MODEL,
+            generation_config={
+                "temperature": 0.4,
+                "response_mime_type": "application/json"
+            }
+        )
+
+        # Точная модель для детального анализа дефектов
+        self.analysis_model = genai.GenerativeModel(
+            config.GEMINI_ANALYSIS_MODEL,
+            generation_config={
+                "temperature": 0.4,
+                "response_mime_type": "application/json"
+            }
+        )
+
+        logger.info(f"AI Service initialized. Fast model: {config.GEMINI_FAST_MODEL}, Analysis model: {config.GEMINI_ANALYSIS_MODEL}")
+
+    async def analyze_photo(self, photo_bytes: bytes, context: str = None) -> Dict[str, Any]:
+        """
+        Analyze construction photo for defects using two-stage approach:
+        1. Fast model checks relevance
+        2. Analysis model performs detailed defect analysis (if relevant)
+
+        Args:
+            photo_bytes: Photo binary data
+            context: User-provided context (e.g., "ЖК Пионер, 5 этаж")
+
+        Returns:
+            Dictionary with analysis results
+        """
+        try:
+            logger.info(f"Starting two-stage photo analysis. Context: {context}, Photo size: {len(photo_bytes)} bytes")
+
+            # Load image
+            image = Image.open(io.BytesIO(photo_bytes))
+            logger.info(f"Image loaded successfully. Size: {image.size}, Format: {image.format}")
+
+            # Read settings from Google Docs (if configured)
+            settings = None
+            if config.GOOGLE_SETTINGS_DOC_ID:
+                try:
+                    logger.info(f"Reading AI settings from Google Doc: {config.GOOGLE_SETTINGS_DOC_ID}")
+                    settings = settings_service.parse_ai_settings(config.GOOGLE_SETTINGS_DOC_ID)
+                    logger.info(f"Settings loaded: relevance_model={settings['relevance_model']}, analysis_model={settings['analysis_model']}")
+                except Exception as e:
+                    logger.warning(f"Failed to read settings from Google Docs, using defaults: {e}")
+
+            # Prepare models and prompts
+            if settings:
+                # Create models with settings from Google Docs
+                relevance_model_name = settings['relevance_model']
+                analysis_model_name = settings['analysis_model']
+
+                relevance_model = genai.GenerativeModel(
+                    relevance_model_name,
+                    generation_config={
+                        "temperature": 0.4,
+                        "response_mime_type": "application/json"
+                    }
+                )
+
+                analysis_model = genai.GenerativeModel(
+                    analysis_model_name,
+                    generation_config={
+                        "temperature": 0.4,
+                        "response_mime_type": "application/json"
+                    }
+                )
+
+                # Use prompts from settings or defaults
+                system_prompt_relevance = settings['relevance_prompt'] if settings['relevance_prompt'] else self.SYSTEM_PROMPT
+                system_prompt_analysis = settings['analysis_prompt'] if settings['analysis_prompt'] else self.SYSTEM_PROMPT
+
+                logger.info(f"Using custom models from settings: {relevance_model_name}, {analysis_model_name}")
+            else:
+                # Use default models and prompts
+                relevance_model = self.fast_model
+                analysis_model = self.analysis_model
+                system_prompt_relevance = self.SYSTEM_PROMPT
+                system_prompt_analysis = self.SYSTEM_PROMPT
+                relevance_model_name = config.GEMINI_FAST_MODEL
+                analysis_model_name = config.GEMINI_ANALYSIS_MODEL
+                logger.info(f"Using default models: {relevance_model_name}, {analysis_model_name}")
+
+            # STAGE 1: Quick relevance check with fast model
+            logger.info(f"STAGE 1: Checking relevance with {relevance_model_name}...")
+            relevance_prompt = f"Контекст: {context}\n\nПроверь, является ли это фото строительным объектом. Если это кот, еда, селфи или не стройка - верни is_relevant: false с шуткой. Если это стройка - верни is_relevant: true." if context else "Проверь, является ли это фото строительным объектом."
+
+            relevance_response = relevance_model.generate_content([
+                system_prompt_relevance,
+                relevance_prompt,
+                image
+            ])
+
+            logger.info(f"Relevance check complete. Response length: {len(relevance_response.text)} chars")
+            logger.debug(f"Fast model response: {relevance_response.text}")
+
+            relevance_result = json.loads(relevance_response.text)
+
+            # If not relevant, return immediately
+            if not relevance_result.get('is_relevant'):
+                logger.info(f"Photo is NOT relevant. Stopping analysis.")
+                return relevance_result
+
+            # STAGE 2: Detailed analysis with analysis model
+            logger.info(f"STAGE 2: Photo is relevant. Starting detailed analysis with {analysis_model_name}...")
+            analysis_prompt = f"Контекст: {context}\n\nПроанализируй это фото согласно инструкции. Найди все дефекты." if context else "Проанализируй это фото согласно инструкции."
+
+            analysis_response = analysis_model.generate_content([
+                system_prompt_analysis,
+                analysis_prompt,
+                image
+            ])
+
+            logger.info(f"Detailed analysis complete. Response length: {len(analysis_response.text)} chars")
+            logger.debug(f"Analysis model response: {analysis_response.text}")
+
+            # Parse response
+            result = json.loads(analysis_response.text)
+
+            logger.info(f"Analysis complete. Defects found: {len(result.get('items', []))}")
+
+            return result
+
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parse error in AI response: {str(e)}")
+            return {
+                "is_relevant": False,
+                "joke": "⚠️ AI вернул некорректный ответ. Попробуй другое фото или обратись к администратору.",
+                "items": [],
+                "expert_summary": None,
+                "error": f"JSON parse error: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"AI service error: {str(e)}", exc_info=True)
+            return {
+                "is_relevant": False,
+                "joke": "⚠️ Не удалось связаться с AI-сервисом. Попробуй через минуту или обратись к администратору.",
+                "items": [],
+                "expert_summary": None,
+                "error": str(e)
+            }
+
+    def format_telegram_message(self, analysis: Dict[str, Any], context: str = None) -> str:
+        """
+        Format analysis results for Telegram message
+
+        Args:
+            analysis: Analysis results from AI
+            context: Object context
+
+        Returns:
+            Formatted message string
+        """
+        if not analysis.get("is_relevant"):
+            return f"😄 {analysis.get('joke', 'Фото не относится к строительству.')}"
+
+        items = analysis.get("items", [])
+        summary = analysis.get("expert_summary", "")
+
+        # Build message
+        msg = f"🏗 **Объект:** {context or 'Не указан'}\n\n"
+        msg += f"🚨 **Выявлено дефектов: {len(items)}**\n\n"
+
+        # Add each defect
+        for idx, item in enumerate(items, 1):
+            criticality_emoji = {
+                "Критический": "🔥",
+                "Значительный": "⚠️",
+                "Малозначительный": "ℹ️"
+            }.get(item.get("criticality", ""), "❓")
+
+            msg += f"{idx}️⃣ **{item.get('defect', 'Неизвестный дефект')}** ({criticality_emoji} {item.get('criticality', 'Неизвестно')})\n"
+            msg += f"📍 *{item.get('location', 'Не указано')}*\n"
+            msg += f"📜 *{item.get('norm', 'Норма не указана')}*\n"
+            msg += f"🛠 {item.get('recommendation', 'Рекомендация не указана')}\n\n"
+
+        # Add summary
+        if summary:
+            msg += f"📝 **Заключение:** {summary}\n\n"
+
+        msg += "✅ **Данные сохранены в таблицу!**"
+
+        return msg
+
+
+# Global AI service instance
+ai_service = AIService()

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DefectMaster - Умный анализ строительных дефектов с использованием ИИ">
+    <title>DefectMaster - Анализ строительных дефектов</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        header p {
+            font-size: 1.3em;
+            opacity: 0.95;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .features h2 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 50px;
+            color: #667eea;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .feature-card {
+            padding: 30px;
+            border-radius: 10px;
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature-card h3 {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: #764ba2;
+        }
+
+        .feature-card p {
+            color: #666;
+            line-height: 1.8;
+        }
+
+        /* Pricing Section */
+        .pricing {
+            padding: 80px 0;
+            background: #f9f9f9;
+        }
+
+        .pricing h2 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 60px;
+            color: #667eea;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: white;
+            border-radius: 15px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.3);
+        }
+
+        .pricing-card.featured {
+            border: 3px solid #667eea;
+            transform: scale(1.05);
+        }
+
+        .pricing-card.featured::before {
+            content: "Популярный";
+            position: absolute;
+            top: -15px;
+            right: 20px;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .pricing-card h3 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            color: #764ba2;
+        }
+
+        .price {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .price-small {
+            font-size: 1em;
+            color: #999;
+        }
+
+        .price-details {
+            color: #666;
+            margin: 15px 0;
+            font-size: 0.95em;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin: 30px 0;
+            padding: 0;
+        }
+
+        .pricing-features li {
+            padding: 10px 0;
+            color: #666;
+            border-bottom: 1px solid #eee;
+        }
+
+        .pricing-features li:last-child {
+            border-bottom: none;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: bold;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .how-it-works h2 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 60px;
+            color: #667eea;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+        }
+
+        .step {
+            text-align: center;
+            padding: 30px;
+        }
+
+        .step-number {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 0 auto 20px;
+        }
+
+        .step h3 {
+            margin-bottom: 15px;
+            color: #764ba2;
+        }
+
+        .step p {
+            color: #666;
+        }
+
+        /* Footer */
+        footer {
+            background: #2d3748;
+            color: white;
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        footer p {
+            opacity: 0.8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 2em;
+            }
+
+            header p {
+                font-size: 1.1em;
+            }
+
+            .features h2, .pricing h2, .how-it-works h2 {
+                font-size: 2em;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>DefectMaster</h1>
+            <p>Автоматический анализ строительных дефектов с использованием искусственного интеллекта</p>
+            <a href="https://t.me/Stroy_Control_001_bot" class="btn" style="margin-top: 30px; font-size: 1.2em;">🤖 Открыть бота в Telegram</a>
+        </div>
+    </header>
+
+    <section class="features">
+        <div class="container">
+            <h2>Что мы предлагаем</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>ИИ-анализ фотографий</h3>
+                    <p>Передовые алгоритмы Google Gemini AI анализируют строительные дефекты на ваших фотографиях в режиме реального времени</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Соответствие нормам РФ</h3>
+                    <p>Все дефекты проверяются на соответствие СНиП, ГОСТ и СП с указанием конкретных пунктов нормативных документов</p>
+                </div>
+                <div class="feature-card">
+                    <h3>Автоматические отчеты</h3>
+                    <p>Получайте детальные отчеты в Google Sheets с фотографиями, описанием дефектов и рекомендациями по устранению</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" style="background: #f9f9f9;">
+        <div class="container">
+            <h2>Мы — не волшебная палочка</h2>
+            <p style="text-align: center; font-size: 1.1em; color: #666; max-width: 800px; margin: -20px auto 50px;">
+                DefectMaster не заменяет инженера строительного контроля. Это <strong>умный инструмент</strong> в руках профессионала.
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 50px; max-width: 1000px; margin: 0 auto;">
+                <div>
+                    <h3 style="color: #28a745; font-size: 1.8em; margin-bottom: 25px;">✅ Что мы делаем</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="padding: 12px 0; color: #666; line-height: 1.8; border-bottom: 1px solid #eee;">
+                            Анализируем фото и находим потенциальные дефекты по нормам РФ
+                        </li>
+                        <li style="padding: 12px 0; color: #666; line-height: 1.8; border-bottom: 1px solid #eee;">
+                            Указываем на детали, которые могли ускользнуть от внимания
+                        </li>
+                        <li style="padding: 12px 0; color: #666; line-height: 1.8; border-bottom: 1px solid #eee;">
+                            Помогаем не пропустить важное, когда "замылился глаз"
+                        </li>
+                        <li style="padding: 12px 0; color: #666; line-height: 1.8;">
+                            Экономим время на рутинной проверке очевидных нарушений
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 style="color: #dc3545; font-size: 1.8em; margin-bottom: 25px;">❌ Чем мы НЕ являемся</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="padding: 12px 0; color: #666; line-height: 1.8; border-bottom: 1px solid #eee;">
+                            Заменой живого эксперта
+                        </li>
+                        <li style="padding: 12px 0; color: #666; line-height: 1.8; border-bottom: 1px solid #eee;">
+                            Источником истины в последней инстанции
+                        </li>
+                        <li style="padding: 12px 0; color: #666; line-height: 1.8; border-bottom: 1px solid #eee;">
+                            Гарантией 100% точности (ИИ может ошибаться)
+                        </li>
+                        <li style="padding: 12px 0; color: #666; line-height: 1.8;">
+                            Автоматическим строительным контролем
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="background: white; border-left: 4px solid #667eea; padding: 30px; margin-top: 50px; border-radius: 10px; max-width: 900px; margin-left: auto; margin-right: auto;">
+                <p style="font-size: 1.2em; color: #333; margin: 0; line-height: 1.8;">
+                    <strong>Окончательное решение — всегда за вами.</strong> Мы лишь помогаем увидеть больше и работать быстрее.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <div class="container">
+            <h2>Как это работает</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Фотографируйте</h3>
+                    <p>Сделайте фото строительного объекта прямо в Telegram-боте</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Получайте анализ</h3>
+                    <p>ИИ мгновенно анализирует фото и выявляет дефекты</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Экспортируйте отчет</h3>
+                    <p>Все результаты автоматически сохраняются в ваш Google Sheets</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pricing">
+        <div class="container">
+            <h2>Честные цены</h2>
+            <p style="text-align: center; font-size: 1.2em; color: #666; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                <strong>10₽ за анализ.</strong> Без психологических трюков с 199₽ и "скидками". Просто честная цена.
+            </p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Старт</h3>
+                    <div class="price">200₽</div>
+                    <div class="price-details">20 анализов фото · 10₽/фото</div>
+                    <ul class="pricing-features">
+                        <li>ИИ-анализ дефектов</li>
+                        <li>Проверка по нормам РФ</li>
+                        <li>Отчеты в Google Sheets</li>
+                        <li>Техническая поддержка</li>
+                    </ul>
+                    <a href="https://t.me/Stroy_Control_001_bot" class="btn">Купить</a>
+                </div>
+
+                <div class="pricing-card featured">
+                    <h3>Бизнес</h3>
+                    <div class="price">500₽</div>
+                    <div class="price-details">50 анализов фото · 10₽/фото</div>
+                    <ul class="pricing-features">
+                        <li>ИИ-анализ дефектов</li>
+                        <li>Проверка по нормам РФ</li>
+                        <li>Отчеты в Google Sheets</li>
+                        <li>Техническая поддержка</li>
+                    </ul>
+                    <a href="https://t.me/Stroy_Control_001_bot" class="btn">Купить</a>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>Про</h3>
+                    <div class="price">1000₽</div>
+                    <div class="price-details">100 анализов фото · 10₽/фото</div>
+                    <ul class="pricing-features">
+                        <li>ИИ-анализ дефектов</li>
+                        <li>Проверка по нормам РФ</li>
+                        <li>Отчеты в Google Sheets</li>
+                        <li>Техническая поддержка</li>
+                    </ul>
+                    <a href="https://t.me/Stroy_Control_001_bot" class="btn">Купить</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div style="margin-bottom: 30px;">
+                <h3 style="margin-bottom: 15px; font-size: 1.2em;">Индивидуальный предприниматель</h3>
+                <p>Пономарев Иван Анатольевич</p>
+                <p>ИНН: 772380331370</p>
+                <p>ОГРНИП: 315774600246919</p>
+                <p>Email: <a href="mailto:office@teamplan.ru" style="color: #667eea;">office@teamplan.ru</a></p>
+                <p>Телефон: <a href="tel:+79933574800" style="color: #667eea;">+7 993 357-48-00</a></p>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <a href="oferta.html" style="color: #667eea; margin: 0 15px;">Публичная оферта</a>
+                <a href="privacy.html" style="color: #667eea; margin: 0 15px;">Политика конфиденциальности</a>
+            </div>
+            <p>&copy; 2025 DefectMaster. Все права защищены.</p>
+            <p>Telegram-бот: <a href="https://t.me/Stroy_Control_001_bot" style="color: #667eea;">@Stroy_Control_001_bot</a></p>
+            <p>Сообщество: <a href="https://t.me/+unHOsuhOxmM2M2Ni" style="color: #667eea;">Присоединиться к обсуждению</a></p>
+        </div>
+    </footer>
+</body>
+</html>
