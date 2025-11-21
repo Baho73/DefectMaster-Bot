@@ -182,12 +182,28 @@ async def handle_photo(message: Message, bot: Bot):
         logger.info(f"Photo processing completed successfully for user {user_id}")
 
     except Exception as e:
-        logger.error(f"Error processing photo for user {user_id}: {str(e)}", exc_info=True)
-        await processing_msg.edit_text(
-            f"⚠️ Ошибка при анализе: {str(e)}\n\n"
-            "Попробуй еще раз или обратись к администратору.",
-            parse_mode="Markdown"
-        )
+        error_str = str(e)
+        logger.error(f"Error processing photo for user {user_id}: {error_str}", exc_info=True)
+
+        # Check for specific errors
+        if "429" in error_str or "exhausted" in error_str.lower() or "quota" in error_str.lower():
+            error_message = (
+                "⏳ **Лимит AI-запросов исчерпан**\n\n"
+                "Сервис временно перегружен. Попробуй через 5-10 минут.\n\n"
+                "💡 Твой баланс не изменился."
+            )
+        elif "503" in error_str or "unavailable" in error_str.lower():
+            error_message = (
+                "🔧 **AI-сервис временно недоступен**\n\n"
+                "Ведутся технические работы. Попробуй через несколько минут."
+            )
+        else:
+            error_message = (
+                f"⚠️ Ошибка при анализе: {error_str[:100]}\n\n"
+                "Попробуй еще раз или обратись к администратору."
+            )
+
+        await processing_msg.edit_text(error_message, parse_mode="Markdown")
 
 
 @router.message(F.text & ~F.text.startswith('/'))
