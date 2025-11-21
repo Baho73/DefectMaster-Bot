@@ -7,6 +7,7 @@ from bot.database.models import db
 from bot.services.ai_service import ai_service
 from bot.services.google_service import google_service
 from bot.services.photo_storage_service import PhotoStorageService
+from bot.services import error_notifier
 from datetime import datetime
 import logging
 import config
@@ -184,6 +185,14 @@ async def handle_photo(message: Message, bot: Bot):
     except Exception as e:
         error_str = str(e)
         logger.error(f"Error processing photo for user {user_id}: {error_str}", exc_info=True)
+
+        # Notify admins about the error
+        await error_notifier.notify_admins_error(
+            error=e,
+            context="Photo analysis",
+            user_id=user_id,
+            username=username
+        )
 
         # Check for specific errors
         if "429" in error_str or "exhausted" in error_str.lower() or "quota" in error_str.lower():
