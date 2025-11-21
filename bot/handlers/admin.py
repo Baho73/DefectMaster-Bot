@@ -3,12 +3,14 @@ Admin command handlers for DefectMaster Bot
 """
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 from bot.database.models import db
 from bot.services.admin_analytics_service import admin_analytics_service
+from bot.services.backup_service import backup_service
 import config
 import logging
 import os
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 router = Router()
@@ -204,6 +206,7 @@ async def cmd_admin(message: Message):
         "<code>/admin_stats</code> - Статистика бота\n"
         "<code>/admin_dashboard</code> - Создать админскую таблицу\n"
         "<code>/admin_sync</code> - Синхронизировать данные в таблицу\n"
+        "<code>/admin_backup</code> - Бэкап базы данных\n"
         "<code>/admin</code> - Список команд",
         parse_mode="HTML"
     )
@@ -292,3 +295,50 @@ async def cmd_admin_sync(message: Message):
     except Exception as e:
         logger.error(f"Error syncing admin dashboard: {e}", exc_info=True)
         await message.answer(f"⚠️ Ошибка при синхронизации: {e}")
+
+
+@router.message(Command("admin_backup"))
+async def cmd_admin_backup(message: Message):
+    """Create database backup (admin only)"""
+    user_id = message.from_user.id
+
+    if not is_admin(user_id):
+        await message.answer("⛔ Эта команда доступна только администраторам")
+        return
+
+    try:
+        await message.answer("⏳ Создаю бэкап базы данных...")
+
+        # Get database stats
+        stats = backup_service.get_db_stats()
+
+        if not stats.get('exists'):
+            await message.answer("⚠️ Файл базы данных не найден")
+            return
+
+        # Backup to Google Drive
+        backup_url = backup_service.backup_to_drive()
+
+        # Send file to admin
+        db_path = backup_service.get_db_file_path()
+        timestamp = datetime.now().strftime('%d.%m.%Y %H:%M')
+
+        caption = (
+            f"📦 <b>Бэкап базы данных</b>\n\n"
+            f"📅 Дата: {timestamp}\n"
+            f"📊 Размер: {stats['size_kb']} KB\n"
+            f"🕐 Изменен: {stats['modified']}\n\n"
+            f"☁️ Google Drive: <a href='{backup_url}'>Открыть</a>"
+        )
+
+        await message.answer_document(
+            document=FSInputFile(db_path, filename=f"bot_db_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"),
+            caption=caption,
+            parse_mode="HTML"
+        )
+
+        logger.info(f"Admin {user_id} created manual backup: {backup_url}")
+
+    except Exception as e:
+        logger.error(f"Error creating backup: {e}", exc_info=True)
+        await message.answer(f"⚠️ Ошибка при создании бэкапа: {e}")
