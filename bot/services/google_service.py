@@ -5,9 +5,12 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 import io
+import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import config
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleService:
@@ -36,6 +39,7 @@ class GoogleService:
         Returns:
             Dict with spreadsheet_id and url
         """
+        logger.info(f"Creating spreadsheet for user: {username}")
         spreadsheet_title = f"{config.SPREADSHEET_TEMPLATE_NAME}_{username}"
 
         # Create spreadsheet in Shared Drive or folder
@@ -75,6 +79,7 @@ class GoogleService:
         # Get spreadsheet URL
         spreadsheet_url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit"
 
+        logger.info(f"Spreadsheet created successfully for {username}: {spreadsheet_id}")
         return {
             'spreadsheet_id': spreadsheet_id,
             'url': spreadsheet_url
