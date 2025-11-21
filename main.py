@@ -14,7 +14,8 @@ from bot.database.models import db
 from bot.handlers import common, photo, tinkoff_payments, admin
 from bot.services.admin_analytics_service import admin_analytics_service
 from bot.services.backup_service import backup_service
-from aiogram.types import FSInputFile
+from bot.services import error_notifier
+from aiogram.types import FSInputFile, ErrorEvent
 
 # Configure logging
 logging.basicConfig(
@@ -128,6 +129,39 @@ async def main():
     dp.include_router(photo.router)
     dp.include_router(tinkoff_payments.router)
     dp.include_router(admin.router)
+
+    # Set bot for error notifier
+    error_notifier.set_bot(bot)
+
+    # Register global error handler
+    @dp.error()
+    async def global_error_handler(event: ErrorEvent):
+        """Handle all unhandled exceptions"""
+        logger.error(f"Unhandled exception: {event.exception}", exc_info=event.exception)
+
+        # Get user info if available
+        user_id = None
+        username = None
+        context = "Unhandled exception"
+
+        if event.update:
+            if event.update.message:
+                user_id = event.update.message.from_user.id
+                username = event.update.message.from_user.username
+                context = f"Message handler: {event.update.message.text[:50] if event.update.message.text else 'photo/media'}"
+            elif event.update.callback_query:
+                user_id = event.update.callback_query.from_user.id
+                username = event.update.callback_query.from_user.username
+                context = f"Callback: {event.update.callback_query.data}"
+
+        await error_notifier.notify_admins_error(
+            error=event.exception,
+            context=context,
+            user_id=user_id,
+            username=username
+        )
+
+        return True  # Error handled
 
     # Startup actions
     await on_startup()
