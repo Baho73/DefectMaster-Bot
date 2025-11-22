@@ -10,6 +10,7 @@ import uuid
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import config
+from bot.database.models import db
 
 logger = logging.getLogger(__name__)
 
@@ -266,24 +267,42 @@ class GoogleService:
         # Return direct link
         return f"https://drive.google.com/uc?id={file_id}"
 
-    def add_defect_row(self, spreadsheet_id: str, analysis: Dict[str, Any],
-                      context: str, photo_url: str):
+    async def add_defect_row(self, spreadsheet_id: str, analysis: Dict[str, Any],
+                            context: str, photo_url: str, user_id: int,
+                            photo_id: str):
         """
-        Add defect analysis results to spreadsheet
+        Add defect analysis results to spreadsheet and database
 
         Args:
             spreadsheet_id: Google Spreadsheet ID
             analysis: AI analysis results
             context: Object context
             photo_url: URL to photo on Google Drive
+            user_id: Telegram user ID
+            photo_id: Telegram photo ID
         """
         items = analysis.get('items', [])
         expert_summary = analysis.get('expert_summary', '')
         timestamp = datetime.now().strftime('%d.%m.%Y %H:%M')
 
+        # Generate analysis UUID for this photo analysis
+        analysis_uuid = uuid.uuid4().hex
+        logger.info(f"Generated analysis UUID: {analysis_uuid}")
+
+        # Save analysis to database
+        await db.save_analysis(
+            analysis_uuid=analysis_uuid,
+            user_id=user_id,
+            photo_id=photo_id,
+            photo_url=photo_url,
+            context=context or 'Не указан',
+            defects_found=len(items),
+            is_relevant=True  # If we got here, photo was relevant
+        )
+
         # Prepare rows (one for each defect)
         rows = []
-        for item in items:
+        for defect_index, item in enumerate(items, start=1):
             # Generate unique UUID for each defect
             defect_uuid = uuid.uuid4().hex
 
@@ -308,7 +327,21 @@ class GoogleService:
             ]
             rows.append(row)
 
-            logger.info(f"Generated UUID for defect: {defect_uuid}")
+            logger.info(f"Generated UUID for defect {defect_index}: {defect_uuid}")
+
+            # Save defect to database
+            await db.save_defect(
+                defect_uuid=defect_uuid,
+                analysis_uuid=analysis_uuid,
+                user_id=user_id,
+                defect_index=defect_index,
+                defect_name=item.get('defect', ''),
+                location=item.get('location', ''),
+                criticality=item.get('criticality', ''),
+                cause=item.get('cause', ''),
+                norm_violation=item.get('norm', ''),
+                recommendation=item.get('recommendation', '')
+            )
 
         # If no defects, add one summary row
         if not rows:
@@ -326,6 +359,20 @@ class GoogleService:
                 expert_summary,
                 f'=HYPERLINK("{photo_url}", "Фото")'
             ])
+
+            # Save "no defects" row to database as well
+            await db.save_defect(
+                defect_uuid=no_defect_uuid,
+                analysis_uuid=analysis_uuid,
+                user_id=user_id,
+                defect_index=0,
+                defect_name='Дефекты не обнаружены',
+                location='',
+                criticality='',
+                cause='',
+                norm_violation='',
+                recommendation=''
+            )
 
         body = {
             'values': rows

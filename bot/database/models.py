@@ -5,9 +5,10 @@ import aiosqlite
 from datetime import datetime
 from typing import Optional, Dict, Any
 import config
+from bot.database.base import DatabaseInterface
 
 
-class Database:
+class Database(DatabaseInterface):
     """Database manager for SQLite"""
 
     def __init__(self, db_path: str = config.DATABASE_PATH):
@@ -60,12 +61,45 @@ class Database:
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS analysis_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    analysis_uuid TEXT UNIQUE,
                     user_id INTEGER,
                     photo_id TEXT,
+                    photo_url TEXT,
                     context_object TEXT,
                     defects_found INTEGER,
                     is_relevant BOOLEAN,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(user_id)
+                )
+            """)
+
+            # Migration: add analysis_uuid and photo_url if they don't exist
+            try:
+                await db.execute("ALTER TABLE analysis_history ADD COLUMN analysis_uuid TEXT")
+            except:
+                pass  # Column already exists
+            try:
+                await db.execute("ALTER TABLE analysis_history ADD COLUMN photo_url TEXT")
+            except:
+                pass  # Column already exists
+
+            # Defects table - detailed defect information
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS defects (
+                    defect_uuid TEXT PRIMARY KEY,
+                    analysis_uuid TEXT,
+                    user_id INTEGER,
+                    defect_index INTEGER,
+                    defect_name TEXT,
+                    location TEXT,
+                    criticality TEXT,
+                    cause TEXT,
+                    norm_violation TEXT,
+                    recommendation TEXT,
+                    status TEXT DEFAULT 'open',
+                    telegram_message_id INTEGER,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (analysis_uuid) REFERENCES analysis_history(analysis_uuid),
                     FOREIGN KEY (user_id) REFERENCES users(user_id)
                 )
             """)
@@ -219,13 +253,122 @@ class Database:
 
     async def log_analysis(self, user_id: int, photo_id: str, context: str,
                           defects_found: int, is_relevant: bool) -> bool:
-        """Log photo analysis to history"""
+        """Log photo analysis to history (legacy method, use save_analysis instead)"""
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
                 """INSERT INTO analysis_history
                    (user_id, photo_id, context_object, defects_found, is_relevant)
                    VALUES (?, ?, ?, ?, ?)""",
                 (user_id, photo_id, context, defects_found, is_relevant)
+            )
+            await db.commit()
+            return True
+
+    async def save_analysis(self, analysis_uuid: str, user_id: int, photo_id: str,
+                           photo_url: str, context: str, defects_found: int,
+                           is_relevant: bool) -> bool:
+        """Save photo analysis to history with UUID and photo URL"""
+        async with aiosqlite.connect(self.db_path) as db:
+            try:
+                await db.execute(
+                    """INSERT INTO analysis_history
+                       (analysis_uuid, user_id, photo_id, photo_url, context_object,
+                        defects_found, is_relevant)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    (analysis_uuid, user_id, photo_id, photo_url, context,
+                     defects_found, is_relevant)
+                )
+                await db.commit()
+                return True
+            except aiosqlite.IntegrityError:
+                return False
+
+    async def get_analysis(self, analysis_uuid: str) -> Optional[Dict[str, Any]]:
+        """Get analysis by UUID"""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT * FROM analysis_history WHERE analysis_uuid = ?",
+                (analysis_uuid,)
+            ) as cursor:
+                row = await cursor.fetchone()
+                return dict(row) if row else None
+
+    async def save_defect(self, defect_uuid: str, analysis_uuid: str, user_id: int,
+                         defect_index: int, defect_name: str, location: str,
+                         criticality: str, cause: str, norm_violation: str,
+                         recommendation: str, telegram_message_id: int = None) -> bool:
+        """Save defect to database"""
+        async with aiosqlite.connect(self.db_path) as db:
+            try:
+                await db.execute(
+                    """INSERT INTO defects
+                       (defect_uuid, analysis_uuid, user_id, defect_index,
+                        defect_name, location, criticality, cause, norm_violation,
+                        recommendation, telegram_message_id)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (defect_uuid, analysis_uuid, user_id, defect_index,
+                     defect_name, location, criticality, cause, norm_violation,
+                     recommendation, telegram_message_id)
+                )
+                await db.commit()
+                return True
+            except aiosqlite.IntegrityError:
+                return False
+
+    async def get_defect(self, defect_uuid: str) -> Optional[Dict[str, Any]]:
+        """Get defect by UUID"""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT * FROM defects WHERE defect_uuid = ?",
+                (defect_uuid,)
+            ) as cursor:
+                row = await cursor.fetchone()
+                return dict(row) if row else None
+
+    async def get_defects_by_analysis(self, analysis_uuid: str) -> list:
+        """Get all defects for a specific analysis"""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                "SELECT * FROM defects WHERE analysis_uuid = ? ORDER BY defect_index",
+                (analysis_uuid,)
+            ) as cursor:
+                rows = await cursor.fetchall()
+                return [dict(row) for row in rows]
+
+    async def get_defects_by_user(self, user_id: int, limit: int = 100) -> list:
+        """Get recent defects for a user"""
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(
+                """SELECT * FROM defects
+                   WHERE user_id = ?
+                   ORDER BY created_at DESC
+                   LIMIT ?""",
+                (user_id, limit)
+            ) as cursor:
+                rows = await cursor.fetchall()
+                return [dict(row) for row in rows]
+
+    async def update_defect_status(self, defect_uuid: str, status: str) -> bool:
+        """Update defect status (open/fixed/verified)"""
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                "UPDATE defects SET status = ? WHERE defect_uuid = ?",
+                (status, defect_uuid)
+            )
+            await db.commit()
+            return True
+
+    async def update_defect_telegram_message(self, defect_uuid: str,
+                                             telegram_message_id: int) -> bool:
+        """Update telegram message ID for defect"""
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                "UPDATE defects SET telegram_message_id = ? WHERE defect_uuid = ?",
+                (telegram_message_id, defect_uuid)
             )
             await db.commit()
             return True

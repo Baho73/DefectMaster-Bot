@@ -123,27 +123,20 @@ async def handle_photo(message: Message, bot: Bot):
 
         logger.info(f"Photo saved successfully. URL: {photo_url}")
 
-        # Add to Google Sheets
+        # Add to Google Sheets and Database
         if user.get('spreadsheet_id'):
-            logger.info(f"Adding defect row to Google Sheets for user {user_id}")
-            google_service.add_defect_row(
+            logger.info(f"Adding defect row to Google Sheets and database for user {user_id}")
+            await google_service.add_defect_row(
                 spreadsheet_id=user['spreadsheet_id'],
                 analysis=analysis,
                 context=context,
-                photo_url=photo_url
+                photo_url=photo_url,
+                user_id=user_id,
+                photo_id=photo.file_id
             )
-            logger.info(f"Defect row added to Google Sheets successfully")
+            logger.info(f"Defect row added to Google Sheets and database successfully")
         else:
             logger.warning(f"User {user_id} has no spreadsheet_id")
-
-        # Log analysis
-        await db.log_analysis(
-            user_id=user_id,
-            photo_id=photo.file_id,
-            context=context,
-            defects_found=len(analysis.get('items', [])),
-            is_relevant=True
-        )
 
         # Check and give referral bonus to inviter (only on first relevant analysis)
         if not await db.is_referral_bonus_given(user_id):
