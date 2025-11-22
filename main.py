@@ -16,6 +16,7 @@ from bot.services.admin_analytics_service import admin_analytics_service
 from bot.services.backup_service import backup_service
 from bot.services import error_notifier
 from aiogram.types import FSInputFile, ErrorEvent
+from aiogram.exceptions import TelegramForbiddenError
 
 # Configure logging
 logging.basicConfig(
@@ -153,6 +154,11 @@ async def main():
                 user_id = event.update.callback_query.from_user.id
                 username = event.update.callback_query.from_user.username
                 context = f"Callback: {event.update.callback_query.data}"
+
+        # Check if user blocked the bot
+        if isinstance(event.exception, TelegramForbiddenError) and user_id:
+            logger.info(f"User {user_id} blocked the bot")
+            await db.log_event(user_id, 'blocked')
 
         await error_notifier.notify_admins_error(
             error=event.exception,

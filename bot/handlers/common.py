@@ -20,6 +20,9 @@ async def cmd_start(message: Message, command: CommandObject):
     user_id = message.from_user.id
     username = message.from_user.username or f"user_{user_id}"
 
+    # Log start event
+    await db.log_event(user_id, 'start')
+
     # Parse referral parameter from deep link
     # Format: /start ref_123456789
     referred_by = None

@@ -70,6 +70,17 @@ class Database:
                 )
             """)
 
+            # User lifecycle events (start/blocked tracking)
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS user_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    event_type TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(user_id)
+                )
+            """)
+
             await db.commit()
 
     async def get_user(self, user_id: int) -> Optional[Dict[str, Any]]:
@@ -237,6 +248,28 @@ class Database:
                 await db.execute(
                     "DELETE FROM users WHERE user_id = ?",
                     (user_id,)
+                )
+                await db.commit()
+                return True
+            except Exception:
+                return False
+
+    async def log_event(self, user_id: int, event_type: str) -> bool:
+        """
+        Log user lifecycle event (start/blocked)
+
+        Args:
+            user_id: User ID
+            event_type: Event type ('start' or 'blocked')
+
+        Returns:
+            True if logged successfully
+        """
+        async with aiosqlite.connect(self.db_path) as db:
+            try:
+                await db.execute(
+                    "INSERT INTO user_events (user_id, event_type) VALUES (?, ?)",
+                    (user_id, event_type)
                 )
                 await db.commit()
                 return True
