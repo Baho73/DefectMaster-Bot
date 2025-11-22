@@ -70,7 +70,7 @@ async def cmd_start(message: Message, command: CommandObject):
 {bonus_text}
 
 📊 **Твоя таблица отчетов:**
-{spreadsheet_data['url']}
+[Открыть таблицу]({spreadsheet_data['url']})
 
 📝 Для начала работы введи контекст объекта:
 *Например: "ЖК Пионер, 5 этаж" или "Мост через р. Волга, опора №4"*
@@ -104,7 +104,7 @@ async def cmd_start(message: Message, command: CommandObject):
 
                 await message.answer(
                     f"📊 **Таблица создана!**\n\n"
-                    f"Ссылка: {spreadsheet_data['url']}\n\n"
+                    f"[Открыть таблицу]({spreadsheet_data['url']})\n\n"
                     f"Теперь все результаты анализа будут сохраняться в твою таблицу!",
                     parse_mode="Markdown"
                 )
@@ -233,7 +233,7 @@ async def cmd_table(message: Message):
 
     url = google_service.get_spreadsheet_url(user['spreadsheet_id'])
     await message.answer(
-        f"📊 **Твоя таблица отчетов:**\n{url}",
+        f"📊 **Твоя таблица отчетов:**\n[Открыть таблицу]({url})",
         parse_mode="Markdown"
     )
 
