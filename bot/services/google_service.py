@@ -6,6 +6,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 import io
 import logging
+import uuid
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 import config
@@ -283,6 +284,9 @@ class GoogleService:
         # Prepare rows (one for each defect)
         rows = []
         for item in items:
+            # Generate unique UUID for each defect
+            defect_uuid = uuid.uuid4().hex
+
             criticality_text = {
                 "Критический": "🔥 Критический",
                 "Значительный": "⚠️ Значительный",
@@ -290,6 +294,7 @@ class GoogleService:
             }.get(item.get('criticality', ''), item.get('criticality', ''))
 
             row = [
+                defect_uuid,  # UUID дефекта (первая колонка)
                 timestamp,
                 context or 'Не указан',
                 item.get('defect', ''),
@@ -303,9 +308,13 @@ class GoogleService:
             ]
             rows.append(row)
 
+            logger.info(f"Generated UUID for defect: {defect_uuid}")
+
         # If no defects, add one summary row
         if not rows:
+            no_defect_uuid = uuid.uuid4().hex
             rows.append([
+                no_defect_uuid,  # UUID даже для "нет дефектов"
                 timestamp,
                 context or 'Не указан',
                 'Дефекты не обнаружены',

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Bot Version
-BOT_VERSION = "1.4.7"
+BOT_VERSION = "1.4.8"
 
 # Telegram
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -75,6 +75,7 @@ PRICING = {
 # Google Sheets
 SPREADSHEET_TEMPLATE_NAME = "СтройКонтроль"
 SHEET_HEADERS = [
+    "UUID дефекта",
     "Дата и Время",
     "Объект / Контекст",
     "Наименование дефекта",
