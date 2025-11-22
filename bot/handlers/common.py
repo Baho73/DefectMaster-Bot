@@ -88,7 +88,8 @@ async def cmd_start(message: Message, command: CommandObject):
 
         except Exception as e:
             await message.answer(
-                f"⚠️ Ошибка при создании таблицы: {e}\n\nПопробуй позже или обратись к администратору."
+                f"⚠️ Ошибка при создании таблицы: {e}\n\nПопробуй позже или обратись к администратору.",
+                parse_mode=None
             )
     else:
         # Show version immediately for existing users too
@@ -109,7 +110,8 @@ async def cmd_start(message: Message, command: CommandObject):
                 )
             except Exception as e:
                 await message.answer(
-                    f"⚠️ Ошибка при создании таблицы: {e}\n\nПопробуй позже или обратись к администратору."
+                    f"⚠️ Ошибка при создании таблицы: {e}\n\nПопробуй позже или обратись к администратору.",
+                    parse_mode=None
                 )
                 return
 

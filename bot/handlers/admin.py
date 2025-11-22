@@ -253,7 +253,7 @@ async def cmd_admin_dashboard(message: Message):
 
     except Exception as e:
         logger.error(f"Error creating admin dashboard: {e}", exc_info=True)
-        await message.answer(f"⚠️ Ошибка при создании таблицы: {e}")
+        await message.answer(f"⚠️ Ошибка при создании таблицы: {e}", parse_mode=None)
 
 
 @router.message(Command("admin_sync"))
