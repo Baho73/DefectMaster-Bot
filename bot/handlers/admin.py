@@ -342,3 +342,63 @@ async def cmd_admin_backup(message: Message):
     except Exception as e:
         logger.error(f"Error creating backup: {e}", exc_info=True)
         await message.answer(f"⚠️ Ошибка при создании бэкапа: {e}")
+
+
+@router.message(Command("admin_delete_user"))
+async def cmd_admin_delete_user(message: Message):
+    """Delete user from database (admin only)"""
+    user_id = message.from_user.id
+
+    if not is_admin(user_id):
+        await message.answer("⛔ Эта команда доступна только администраторам")
+        return
+
+    # Parse command: /admin_delete_user <user_id>
+    try:
+        parts = message.text.split()
+        if len(parts) != 2:
+            await message.answer(
+                "📝 <b>Использование:</b>\n"
+                "<code>/admin_delete_user &lt;user_id&gt;</code>\n\n"
+                "<b>Пример:</b>\n"
+                "<code>/admin_delete_user 123456789</code>\n\n"
+                "⚠️ <b>Внимание:</b> Это полностью удалит пользователя и все его данные из базы!",
+                parse_mode="HTML"
+            )
+            return
+
+        target_user_id = int(parts[1])
+
+        # Check if user exists
+        user = await db.get_user(target_user_id)
+        if not user:
+            await message.answer(f"⚠️ Пользователь с ID {target_user_id} не найден в базе")
+            return
+
+        # Show user info before deletion
+        username = user.get('username', 'Unknown')
+        balance = user.get('balance', 0)
+        context = user.get('context_object', 'Не установлен')
+
+        # Delete user
+        success = await db.delete_user(target_user_id)
+
+        if success:
+            logger.info(f"Admin {user_id} deleted user {target_user_id} (@{username})")
+            await message.answer(
+                f"✅ <b>Пользователь удалён!</b>\n\n"
+                f"👤 User ID: <code>{target_user_id}</code>\n"
+                f"👤 Username: @{username}\n"
+                f"💳 Баланс был: {balance} фото\n"
+                f"📍 Объект был: {context}\n\n"
+                f"Все данные пользователя удалены из базы.",
+                parse_mode="HTML"
+            )
+        else:
+            await message.answer(f"⚠️ Ошибка при удалении пользователя {target_user_id}")
+
+    except ValueError:
+        await message.answer("⚠️ Неверный формат user_id. Используй число.")
+    except Exception as e:
+        logger.error(f"Error deleting user: {e}", exc_info=True)
+        await message.answer(f"⚠️ Ошибка при удалении пользователя: {e}", parse_mode=None)

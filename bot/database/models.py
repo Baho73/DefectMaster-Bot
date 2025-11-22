@@ -219,6 +219,30 @@ class Database:
             await db.commit()
             return True
 
+    async def delete_user(self, user_id: int) -> bool:
+        """Delete user and all related data from database"""
+        async with aiosqlite.connect(self.db_path) as db:
+            try:
+                # Delete from analysis_history
+                await db.execute(
+                    "DELETE FROM analysis_history WHERE user_id = ?",
+                    (user_id,)
+                )
+                # Delete from payments
+                await db.execute(
+                    "DELETE FROM payments WHERE user_id = ?",
+                    (user_id,)
+                )
+                # Delete from users
+                await db.execute(
+                    "DELETE FROM users WHERE user_id = ?",
+                    (user_id,)
+                )
+                await db.commit()
+                return True
+            except Exception:
+                return False
+
     def get_connection(self):
         """Get database connection context manager"""
         return aiosqlite.connect(self.db_path)
