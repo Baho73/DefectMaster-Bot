@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ru" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DefectMaster - Умный анализ строительных дефектов с ИИ. 10₽ за анализ. Без подписок.">
+    <title>DefectMaster - Анализ строительных дефектов через Telegram</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- AOS Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        construction: {
+                            blue: '#2563eb',
+                            orange: '#f97316',
+                            gray: '#475569'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Custom Gradient */
+        .gradient-construction {
+            background: linear-gradient(135deg, #2563eb 0%, #f97316 100%);
+        }
+
+        /* Smooth transitions */
+        * {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Phone mockup placeholder */
+        .phone-mockup {
+            aspect-ratio: 9/19;
+            background: linear-gradient(145deg, #f1f5f9, #e2e8f0);
+            border-radius: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phone-mockup::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40%;
+            height: 30px;
+            background: #1e293b;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+
+        /* Screenshot placeholder */
+        .screenshot-placeholder {
+            background: linear-gradient(145deg, #f8fafc, #f1f5f9);
+            border: 2px dashed #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            border-radius: 1rem;
+        }
+
+        /* FAQ Accordion */
+        .faq-item input[type="checkbox"]:checked ~ .faq-answer {
+            max-height: 500px;
+            opacity: 1;
+            padding-top: 1rem;
+        }
+
+        .faq-answer {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease, opacity 0.3s ease, padding 0.3s ease;
+        }
+
+        .faq-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .faq-item input[type="checkbox"]:checked ~ label .faq-icon {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="antialiased bg-gray-50 text-gray-900">
+
+    <!-- Hero Section -->
+    <header class="gradient-construction relative overflow-hidden">
+        <div class="absolute inset-0 bg-black opacity-5"></div>
+
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative z-10">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <!-- Left: Text Content -->
+                <div class="text-white" data-aos="fade-right">
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6">
+                        Анализ дефектов <br class="hidden sm:block">за <span class="text-yellow-300">10 секунд</span>
+                    </h1>
+                    <p class="text-xl md:text-2xl mb-8 text-white/90 font-medium">
+                        ИИ находит нарушения СНиП/ГОСТ, создаёт отчёты и экономит твоё время
+                    </p>
+                    <p class="text-lg mb-10 text-white/80">
+                        Отправь фото в Telegram → Получи анализ → Скачай отчёт
+                    </p>
+
+                    <!-- CTA Button - Large & Prominent -->
+                    <a href="https://t.me/Stroy_Control_001_bot"
+                       class="inline-flex items-center gap-3 bg-white text-construction-blue px-10 py-5 rounded-full text-xl font-bold shadow-2xl hover:shadow-orange-500/50 hover:scale-105 transform">
+                        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121L7.63 13.73l-2.94-.918c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.95z"/>
+                        </svg>
+                        Открыть бота
+                    </a>
+
+                    <p class="mt-6 text-white/70 text-sm">
+                        🎁 5 бесплатных анализов при регистрации
+                    </p>
+                </div>
+
+                <!-- Right: Phone Mockup -->
+                <div class="flex justify-center lg:justify-end" data-aos="fade-left" data-aos-delay="200">
+                    <div class="w-full max-w-xs phone-mockup">
+                        <div class="text-center p-6">
+                            <svg class="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <p class="text-gray-500 text-sm font-semibold">MOCKUP:<br>Telegram бот<br>+ фото дефекта<br>+ анализ ИИ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Decorative Wave -->
+        <div class="absolute bottom-0 left-0 right-0">
+            <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="#f9fafb"/>
+            </svg>
+        </div>
+    </header>
+
+    <!-- Examples Section: Before/After -->
+    <section class="py-20 bg-gray-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16" data-aos="fade-up">
+                <h2 class="text-4xl md:text-5xl font-black mb-4 text-gray-900">
+                    Как это работает?
+                </h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Реальный пример анализа строительного дефекта
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                <!-- Before: Photo -->
+                <div class="bg-white rounded-2xl shadow-xl p-6" data-aos="fade-right">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-full gradient-construction flex items-center justify-center text-white font-bold">1</div>
+                        <h3 class="text-2xl font-bold text-gray-900">Отправил фото</h3>
+                    </div>
+                    <div class="screenshot-placeholder">
+                        <div class="text-center p-6">
+                            <svg class="w-16 h-16 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <p class="text-gray-500 font-semibold">Фото: Трещина в бетоне<br>на строительной площадке</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- After: AI Analysis -->
+                <div class="bg-white rounded-2xl shadow-xl p-6" data-aos="fade-left" data-aos-delay="200">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-full gradient-construction flex items-center justify-center text-white font-bold">2</div>
+                        <h3 class="text-2xl font-bold text-gray-900">Получил анализ</h3>
+                    </div>
+                    <div class="space-y-4 bg-gradient-to-br from-blue-50 to-orange-50 p-6 rounded-xl border-2 border-orange-200">
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">🔥</span>
+                            <div class="flex-1">
+                                <p class="font-bold text-gray-900">Критический дефект</p>
+                                <p class="text-sm text-gray-700 mt-1">Вертикальная трещина в несущей конструкции</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">📜</span>
+                            <div class="flex-1">
+                                <p class="font-bold text-gray-900">Нарушение норм</p>
+                                <p class="text-sm text-gray-700 mt-1">СП 70.13330.2012 п. 5.17.4<br>ГОСТ 31384-2017 п. 4.2.1</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <span class="text-2xl">🛠</span>
+                            <div class="flex-1">
+                                <p class="font-bold text-gray-900">Рекомендация</p>
+                                <p class="text-sm text-gray-700 mt-1">Остановить работы. Провести обследование конструкции. Усилить несущую способность.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Google Sheets Report Example -->
+            <div class="mt-16 max-w-4xl mx-auto" data-aos="fade-up" data-aos-delay="400">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center gap-3 bg-green-100 text-green-800 px-6 py-3 rounded-full font-bold">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2M18 20H6V4H13V9H18V20M10 19L12 17L14 19L12.5 14.5L16 12H13L12 9.5L11 12H8L11.5 14.5L10 19Z"/>
+                        </svg>
+                        <span>3. Всё сохранено в Google Sheets</span>
+                    </div>
+                </div>
+                <div class="screenshot-placeholder bg-white border-4 border-green-200">
+                    <div class="text-center p-8">
+                        <svg class="w-20 h-20 mx-auto mb-4 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2M18 20H6V4H13V9H18V20Z"/>
+                        </svg>
+                        <p class="text-gray-700 font-semibold text-lg">Скриншот Google Sheets таблицы</p>
+                        <p class="text-gray-500 mt-2">Дата | Объект | Дефект | Критичность | Норма | Рекомендация | Фото</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20 bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16" data-aos="fade-up">
+                <h2 class="text-4xl md:text-5xl font-black mb-4 text-gray-900">
+                    Что ты получаешь
+                </h2>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-8 rounded-2xl border-2 border-blue-200" data-aos="fade-up" data-aos-delay="0">
+                    <div class="text-5xl mb-4">🤖</div>
+                    <h3 class="text-2xl font-bold mb-3 text-gray-900">ИИ-анализ</h3>
+                    <p class="text-gray-700 leading-relaxed">
+                        Google Gemini AI анализирует фото за 10-20 секунд. Находит дефекты, которые легко пропустить взглядом.
+                    </p>
+                </div>
+
+                <div class="bg-gradient-to-br from-orange-50 to-orange-100 p-8 rounded-2xl border-2 border-orange-200" data-aos="fade-up" data-aos-delay="100">
+                    <div class="text-5xl mb-4">📋</div>
+                    <h3 class="text-2xl font-bold mb-3 text-gray-900">Нормы РФ</h3>
+                    <p class="text-gray-700 leading-relaxed">
+                        Каждый дефект проверяется по СНиП, ГОСТ и СП с указанием конкретных пунктов нормативов.
+                    </p>
+                </div>
+
+                <div class="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-2xl border-2 border-green-200" data-aos="fade-up" data-aos-delay="200">
+                    <div class="text-5xl mb-4">📊</div>
+                    <h3 class="text-2xl font-bold mb-3 text-gray-900">Автоотчёты</h3>
+                    <p class="text-gray-700 leading-relaxed">
+                        Все результаты автоматически попадают в твою личную Google Sheets таблицу с фото и данными.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Warning Section: "Not a Magic Wand" -->
+    <section class="py-20 bg-yellow-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto" data-aos="fade-up">
+                <!-- Warning Badge -->
+                <div class="flex items-center justify-center gap-3 mb-8">
+                    <div class="w-12 h-12 rounded-full bg-yellow-400 flex items-center justify-center">
+                        <span class="text-2xl">ℹ️</span>
+                    </div>
+                    <h2 class="text-3xl md:text-4xl font-black text-gray-900">Мы — не волшебная палочка</h2>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12 border-4 border-yellow-300">
+                    <p class="text-xl text-gray-700 mb-8 text-center leading-relaxed">
+                        DefectMaster не заменяет инженера строительного контроля. <br class="hidden md:block">
+                        Это <strong class="text-construction-blue">умный инструмент</strong> в руках профессионала.
+                    </p>
+
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- What We Do -->
+                        <div>
+                            <h3 class="text-2xl font-bold text-green-600 mb-6 flex items-center gap-2">
+                                <span>✅</span> Что мы делаем
+                            </h3>
+                            <ul class="space-y-3">
+                                <li class="flex items-start gap-3">
+                                    <span class="text-green-500 font-bold">•</span>
+                                    <span class="text-gray-700">Анализируем фото и находим потенциальные дефекты</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-green-500 font-bold">•</span>
+                                    <span class="text-gray-700">Указываем на детали, которые могли ускользнуть</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-green-500 font-bold">•</span>
+                                    <span class="text-gray-700">Помогаем, когда "замылился глаз"</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-green-500 font-bold">•</span>
+                                    <span class="text-gray-700">Экономим время на рутинной проверке</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- What We're NOT -->
+                        <div>
+                            <h3 class="text-2xl font-bold text-red-600 mb-6 flex items-center gap-2">
+                                <span>❌</span> Чем мы НЕ являемся
+                            </h3>
+                            <ul class="space-y-3">
+                                <li class="flex items-start gap-3">
+                                    <span class="text-red-500 font-bold">•</span>
+                                    <span class="text-gray-700">Заменой живого эксперта</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-red-500 font-bold">•</span>
+                                    <span class="text-gray-700">Источником истины в последней инстанции</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-red-500 font-bold">•</span>
+                                    <span class="text-gray-700">Гарантией 100% точности (ИИ может ошибаться)</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <span class="text-red-500 font-bold">•</span>
+                                    <span class="text-gray-700">Автоматическим строительным контролем</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Bottom CTA -->
+                    <div class="mt-10 p-6 bg-gradient-to-r from-blue-100 to-orange-100 rounded-xl border-2 border-blue-300">
+                        <p class="text-lg font-bold text-gray-900 text-center">
+                            ⚠️ Окончательное решение — всегда за вами. Мы лишь помогаем увидеть больше и работать быстрее.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Social Proof / Case Study -->
+    <section class="py-20 bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-4xl mx-auto" data-aos="fade-up">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl md:text-5xl font-black mb-4 text-gray-900">Реальный кейс</h2>
+                    <p class="text-xl text-gray-600">Как Иван сэкономил 3 часа на отчётах</p>
+                </div>
+
+                <div class="bg-gradient-to-br from-blue-50 to-orange-50 rounded-2xl p-8 md:p-12 border-2 border-blue-200">
+                    <div class="flex items-start gap-6 mb-6">
+                        <div class="w-16 h-16 rounded-full gradient-construction flex-shrink-0 flex items-center justify-center text-white text-2xl font-bold">
+                            И
+                        </div>
+                        <div>
+                            <p class="text-xl font-bold text-gray-900 mb-1">Иван Смирнов</p>
+                            <p class="text-gray-600">Инженер строительного контроля, Москва</p>
+                        </div>
+                    </div>
+
+                    <blockquote class="text-lg text-gray-700 italic leading-relaxed mb-6">
+                        "Раньше уходило 3-4 часа на фотографирование, описание дефектов и заполнение Excel.
+                        Теперь просто загружаю 50 фото в бота, получаю готовую таблицу с анализом за 10 минут.
+                        Осталось только проверить и дополнить своими комментариями. Экономлю минимум 3 часа каждую неделю."
+                    </blockquote>
+
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div class="bg-white rounded-lg p-4">
+                            <p class="text-3xl font-black text-construction-blue">50</p>
+                            <p class="text-sm text-gray-600 mt-1">фото/день</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4">
+                            <p class="text-3xl font-black text-construction-orange">3ч</p>
+                            <p class="text-sm text-gray-600 mt-1">экономии</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4">
+                            <p class="text-3xl font-black text-green-600">500₽</p>
+                            <p class="text-sm text-gray-600 mt-1">за неделю</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="py-20 bg-gray-50">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-4" data-aos="fade-up">
+                <h2 class="text-4xl md:text-5xl font-black mb-4 text-gray-900">Честные цены</h2>
+                <p class="text-2xl font-bold text-construction-orange mb-2">10₽ за анализ</p>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Без психологических трюков с "199₽" и "скидками". Просто честная цена.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mt-12">
+                <!-- Starter -->
+                <div class="bg-white rounded-2xl shadow-lg p-8 border-2 border-gray-200 hover:border-blue-400 hover:shadow-2xl" data-aos="fade-up" data-aos-delay="0">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Старт</h3>
+                    <div class="mb-6">
+                        <span class="text-5xl font-black text-gray-900">200₽</span>
+                    </div>
+                    <p class="text-gray-600 mb-6">20 анализов · <strong>10₽/фото</strong></p>
+
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> ИИ-анализ дефектов
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> Проверка по нормам РФ
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> Отчёты в Google Sheets
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> Техподдержка
+                        </li>
+                    </ul>
+
+                    <a href="https://t.me/Stroy_Control_001_bot"
+                       class="block w-full text-center bg-gray-900 text-white py-4 rounded-xl font-bold hover:bg-gray-800 transform hover:scale-105">
+                        Купить
+                    </a>
+                </div>
+
+                <!-- Business (Featured) -->
+                <div class="bg-white rounded-2xl shadow-2xl p-8 border-4 border-construction-orange relative transform md:scale-105" data-aos="fade-up" data-aos-delay="100">
+                    <!-- Recommended Badge -->
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span class="bg-construction-orange text-white px-6 py-2 rounded-full font-bold text-sm shadow-lg">
+                            🔥 Рекомендуем
+                        </span>
+                    </div>
+
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Бизнес</h3>
+                    <div class="mb-6">
+                        <span class="text-5xl font-black gradient-construction bg-clip-text text-transparent">500₽</span>
+                    </div>
+                    <p class="text-gray-600 mb-6">50 анализов · <strong>10₽/фото</strong></p>
+
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> ИИ-анализ дефектов
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> Проверка по нормам РФ
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> Отчёты в Google Sheets
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> Техподдержка
+                        </li>
+                    </ul>
+
+                    <a href="https://t.me/Stroy_Control_001_bot"
+                       class="block w-full text-center gradient-construction text-white py-4 rounded-xl font-bold hover:shadow-2xl transform hover:scale-105">
+                        Купить
+                    </a>
+                </div>
+
+                <!-- Pro -->
+                <div class="bg-white rounded-2xl shadow-lg p-8 border-2 border-gray-200 hover:border-blue-400 hover:shadow-2xl" data-aos="fade-up" data-aos-delay="200">
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Про</h3>
+                    <div class="mb-6">
+                        <span class="text-5xl font-black text-gray-900">1000₽</span>
+                    </div>
+                    <p class="text-gray-600 mb-6">100 анализов · <strong>10₽/фото</strong></p>
+
+                    <ul class="space-y-3 mb-8">
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> ИИ-анализ дефектов
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> Проверка по нормам РФ
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> Отчёты в Google Sheets
+                        </li>
+                        <li class="flex items-center gap-2 text-gray-700">
+                            <span class="text-green-500">✓</span> Техподдержка
+                        </li>
+                    </ul>
+
+                    <a href="https://t.me/Stroy_Control_001_bot"
+                       class="block w-full text-center bg-gray-900 text-white py-4 rounded-xl font-bold hover:bg-gray-800 transform hover:scale-105">
+                        Купить
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="py-20 bg-white">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mx-auto">
+                <div class="text-center mb-12" data-aos="fade-up">
+                    <h2 class="text-4xl md:text-5xl font-black mb-4 text-gray-900">Частые вопросы</h2>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- FAQ Item 1 -->
+                    <div class="faq-item bg-gray-50 rounded-xl overflow-hidden" data-aos="fade-up" data-aos-delay="0">
+                        <input type="checkbox" id="faq1" class="hidden">
+                        <label for="faq1" class="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-100">
+                            <span class="text-lg font-bold text-gray-900">Работает ли без интернета?</span>
+                            <svg class="w-6 h-6 text-gray-600 faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </label>
+                        <div class="faq-answer px-6 pb-6">
+                            <p class="text-gray-700">
+                                <strong>Да, работает!</strong> Вы можете сделать фотографии на строительной площадке, в подвале или в любом месте без интернета.
+                                Затем просто выйдите на улицу или приезжайте туда, где есть связь, и отправьте фото в бот.
+                                Для отправки и анализа нужен интернет, но снимать можно где угодно.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 2 -->
+                    <div class="faq-item bg-gray-50 rounded-xl overflow-hidden" data-aos="fade-up" data-aos-delay="100">
+                        <input type="checkbox" id="faq2" class="hidden">
+                        <label for="faq2" class="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-100">
+                            <span class="text-lg font-bold text-gray-900">Какие именно СНиПы знает бот?</span>
+                            <svg class="w-6 h-6 text-gray-600 faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </label>
+                        <div class="faq-answer px-6 pb-6">
+                            <p class="text-gray-700">
+                                Бот обучен на основных нормативах: СНиП 3.03.01-87, СП 70.13330.2012, ГОСТ 31384-2017, ГОСТ Р 54257-2010 и других.
+                                Модель регулярно обновляется и дополняется новыми нормами.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 3 -->
+                    <div class="faq-item bg-gray-50 rounded-xl overflow-hidden" data-aos="fade-up" data-aos-delay="200">
+                        <input type="checkbox" id="faq3" class="hidden">
+                        <label for="faq3" class="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-100">
+                            <span class="text-lg font-bold text-gray-900">Безопасно ли это для данных компании?</span>
+                            <svg class="w-6 h-6 text-gray-600 faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </label>
+                        <div class="faq-answer px-6 pb-6">
+                            <p class="text-gray-700">
+                                Да. Фотографии обрабатываются через защищённые API Google. Данные хранятся в вашей личной Google Sheets таблице,
+                                доступ к которой имеете только вы. Мы не передаём данные третьим лицам.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 4 -->
+                    <div class="faq-item bg-gray-50 rounded-xl overflow-hidden" data-aos="fade-up" data-aos-delay="300">
+                        <input type="checkbox" id="faq4" class="hidden">
+                        <label for="faq4" class="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-100">
+                            <span class="text-lg font-bold text-gray-900">Можно ли получить возврат средств?</span>
+                            <svg class="w-6 h-6 text-gray-600 faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </label>
+                        <div class="faq-answer px-6 pb-6">
+                            <p class="text-gray-700">
+                                Да, мы возвращаем деньги в течение 14 дней после покупки, если вы не использовали ни одного анализа.
+                                Для возврата напишите в поддержку через бот или на email.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- FAQ Item 5 -->
+                    <div class="faq-item bg-gray-50 rounded-xl overflow-hidden" data-aos="fade-up" data-aos-delay="400">
+                        <input type="checkbox" id="faq5" class="hidden">
+                        <label for="faq5" class="flex items-center justify-between p-6 cursor-pointer hover:bg-gray-100">
+                            <span class="text-lg font-bold text-gray-900">Сколько времени занимает анализ одного фото?</span>
+                            <svg class="w-6 h-6 text-gray-600 faq-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </label>
+                        <div class="faq-answer px-6 pb-6">
+                            <p class="text-gray-700">
+                                В среднем 10-20 секунд. Бот сначала проверяет релевантность фото (2-3 секунды),
+                                затем выполняет детальный анализ (10-15 секунд). При высокой нагрузке возможна очередь до 1 минуты.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="py-20 gradient-construction relative overflow-hidden">
+        <div class="absolute inset-0 bg-black opacity-10"></div>
+
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10" data-aos="fade-up">
+            <div class="max-w-3xl mx-auto text-center text-white">
+                <h2 class="text-4xl md:text-5xl font-black mb-6">
+                    Попробуй прямо сейчас
+                </h2>
+                <p class="text-xl md:text-2xl mb-8 text-white/90">
+                    🎁 5 бесплатных анализов при регистрации
+                </p>
+                <a href="https://t.me/Stroy_Control_001_bot"
+                   class="inline-flex items-center gap-3 bg-white text-construction-blue px-12 py-6 rounded-full text-2xl font-bold shadow-2xl hover:shadow-orange-500/50 hover:scale-110 transform">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121L7.63 13.73l-2.94-.918c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.95z"/>
+                    </svg>
+                    Открыть бота в Telegram
+                </a>
+                <p class="mt-6 text-white/80">
+                    Регистрация за 10 секунд · Не требуется банковская карта
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-3 gap-8 mb-8">
+                <!-- Company Info -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4">DefectMaster</h3>
+                    <p class="text-gray-400">
+                        Умный анализ строительных дефектов с использованием искусственного интеллекта
+                    </p>
+                </div>
+
+                <!-- Legal Info -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4">ИП Пономарев И.А.</h3>
+                    <p class="text-gray-400 text-sm">ИНН: 772380331370</p>
+                    <p class="text-gray-400 text-sm">ОГРНИП: 315774600246919</p>
+                    <p class="text-gray-400 text-sm mt-2">
+                        Email: <a href="mailto:office@teamplan.ru" class="text-construction-orange hover:underline">office@teamplan.ru</a>
+                    </p>
+                    <p class="text-gray-400 text-sm">
+                        Телефон: <a href="tel:+79933574800" class="text-construction-orange hover:underline">+7 993 357-48-00</a>
+                    </p>
+                </div>
+
+                <!-- Links -->
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Ссылки</h3>
+                    <ul class="space-y-2">
+                        <li><a href="https://t.me/Stroy_Control_001_bot" class="text-gray-400 hover:text-construction-orange">Telegram-бот</a></li>
+                        <li><a href="https://t.me/+unHOsuhOxmM2M2Ni" class="text-gray-400 hover:text-construction-orange">Сообщество</a></li>
+                        <li><a href="oferta.html" class="text-gray-400 hover:text-construction-orange">Публичная оферта</a></li>
+                        <li><a href="privacy.html" class="text-gray-400 hover:text-construction-orange">Политика конфиденциальности</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800 pt-8 text-center text-gray-400">
+                <p>&copy; 2025 DefectMaster. Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- AOS Library -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({
+            duration: 800,
+            easing: 'ease-out-cubic',
+            once: true,
+            offset: 100
+        });
+    </script>
+</body>
+</html>
