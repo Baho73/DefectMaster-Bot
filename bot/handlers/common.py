@@ -7,6 +7,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from bot.database.models import db
 from bot.services.google_service import google_service
+from bot.services.ai_service import ai_service
 from bot.utils.markdown_utils import escape_markdown, escape_html
 import config
 import logging
@@ -46,7 +47,8 @@ async def cmd_start(message: Message, command: CommandObject):
 
     if not user:
         # Show version immediately
-        await message.answer(f"🤖 DefectMaster Bot v{config.BOT_VERSION}")
+        prompt_version = ai_service.prompt_version if hasattr(ai_service, 'prompt_version') else 'unknown'
+        await message.answer(f"🤖 DefectMaster Bot v{config.BOT_VERSION}\n📝 Промпты: v{prompt_version}")
 
         # Create new user with referral
         await db.create_user(user_id, username, referred_by)
@@ -98,7 +100,8 @@ async def cmd_start(message: Message, command: CommandObject):
             )
     else:
         # Show version immediately for existing users too
-        await message.answer(f"🤖 DefectMaster Bot v{config.BOT_VERSION}")
+        prompt_version = ai_service.prompt_version if hasattr(ai_service, 'prompt_version') else 'unknown'
+        await message.answer(f"🤖 DefectMaster Bot v{config.BOT_VERSION}\n📝 Промпты: v{prompt_version}")
 
         # Existing user - check if they have a spreadsheet
         if not user.get('spreadsheet_id'):

@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Bot Version
-BOT_VERSION = "1.6.2"
+BOT_VERSION = "1.6.3"
 
 # Telegram
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
