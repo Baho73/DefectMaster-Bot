@@ -7,6 +7,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from bot.database.models import db
 from bot.services.google_service import google_service
+from bot.utils.markdown_utils import escape_markdown
 import config
 import logging
 

@@ -7,9 +7,11 @@ from bot.database.models import db
 from bot.services.ai_service import ai_service
 from bot.services.google_service import google_service
 from bot.services.photo_storage_service import PhotoStorageService
+from bot.services.photo_queue import photo_queue
 from bot.services import error_notifier
 from bot.utils.markdown_utils import escape_markdown
 from datetime import datetime
+import asyncio
 import logging
 import config
 
@@ -66,6 +68,17 @@ async def handle_photo(message: Message, bot: Bot):
 
     logger.info(f"Processing photo for user {user_id}. Context: {context}, Balance: {user['balance']}")
 
+    # Check queue size
+    queue_size = photo_queue.get_queue_size()
+    if queue_size > 0:
+        queue_msg = await message.answer(
+            f"⏳ Фото добавлено в очередь обработки\n\n"
+            f"📊 Позиция в очереди: {queue_size + 1}\n"
+            f"⏱ Примерное время ожидания: ~{queue_size * 30} секунд"
+        )
+        await asyncio.sleep(2)  # Show queue message for 2 seconds
+        await queue_msg.delete()
+
     # Send "analyzing" message
     processing_msg = await message.answer("🔍 Анализирую фото...")
 
@@ -78,9 +91,9 @@ async def handle_photo(message: Message, bot: Bot):
         photo_data = photo_bytes.read()
         logger.info(f"Photo downloaded successfully. Size: {len(photo_data)} bytes")
 
-        # Analyze with AI
-        logger.info(f"Starting AI analysis for user {user_id}")
-        analysis = await ai_service.analyze_photo(photo_data, context)
+        # Analyze with AI using queue (rate-limited)
+        logger.info(f"Adding photo to processing queue for user {user_id}")
+        analysis = await photo_queue.process_photo(photo_data, context, ai_service)
         logger.info(f"AI analysis completed for user {user_id}")
 
         # Check if relevant
@@ -151,10 +164,11 @@ async def handle_photo(message: Message, bot: Bot):
                 # Notify the referrer
                 try:
                     referrer_username = user.get('username') or f"user_{user_id}"
+                    safe_username = escape_markdown(referrer_username)
                     await bot.send_message(
                         referrer['user_id'],
                         f"🎉 **Бонус за приглашение!**\n\n"
-                        f"Ваш коллега @{referrer_username} сделал первый анализ строительного фото!\n\n"
+                        f"Ваш коллега @{safe_username} сделал первый анализ строительного фото!\n\n"
                         f"💰 **+{config.REFERRAL_BONUS_INVITER} фото** начислено на ваш баланс!",
                         parse_mode="Markdown"
                     )
