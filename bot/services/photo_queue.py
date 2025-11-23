@@ -17,13 +17,13 @@ class PhotoQueue:
     - Rate limiter ensures minimum interval between Gemini Pro requests
     """
 
-    def __init__(self, max_concurrent: int = 1, min_interval_seconds: float = 30.0):
+    def __init__(self, max_concurrent: int = 10, min_interval_seconds: float = 0.5):
         """
         Initialize photo queue
 
         Args:
             max_concurrent: Maximum number of photos processing simultaneously
-            min_interval_seconds: Minimum seconds between Gemini Pro API calls (for 2 RPM limit)
+            min_interval_seconds: Minimum seconds between Gemini Pro API calls
         """
         self.semaphore = asyncio.Semaphore(max_concurrent)
         self.min_interval = min_interval_seconds
@@ -35,7 +35,9 @@ class PhotoQueue:
 
     async def process_photo(self, photo_data: bytes, context: str, ai_service) -> Dict[str, Any]:
         """
-        Process photo with rate limiting
+        Process photo with rate limiting (Pro model detailed analysis only)
+
+        Note: This should only be called AFTER relevance check (Flash model)
 
         Args:
             photo_data: Photo binary data
@@ -43,14 +45,14 @@ class PhotoQueue:
             ai_service: AI service instance
 
         Returns:
-            Analysis results
+            Analysis results from Pro model
         """
         # Wait for semaphore (queue position)
         async with self.semaphore:
             self.queue_size += 1
             current_position = self.queue_size
 
-            logger.info(f"Photo entered processing queue. Position: {current_position}")
+            logger.info(f"Photo entered Pro analysis queue. Position: {current_position}")
 
             try:
                 # Rate limiting: ensure minimum interval between requests
@@ -60,15 +62,15 @@ class PhotoQueue:
 
                     if time_since_last < self.min_interval:
                         wait_time = self.min_interval - time_since_last
-                        logger.info(f"Rate limiting: waiting {wait_time:.1f}s before next request")
+                        logger.info(f"Rate limiting: waiting {wait_time:.1f}s before next Pro request")
                         await asyncio.sleep(wait_time)
 
                     self.last_request_time = time.time()
 
-                # Process photo
-                logger.info(f"Starting AI analysis for photo at position {current_position}")
-                result = await ai_service.analyze_photo(photo_data, context)
-                logger.info(f"AI analysis completed for position {current_position}")
+                # Process photo with Pro model (detailed defect analysis)
+                logger.info(f"Starting Pro model defect analysis at position {current_position}")
+                result = await ai_service.analyze_defects(photo_data, context)
+                logger.info(f"Pro model analysis completed for position {current_position}")
 
                 return result
 
@@ -81,4 +83,5 @@ class PhotoQueue:
 
 
 # Global photo queue instance
-photo_queue = PhotoQueue(max_concurrent=1, min_interval_seconds=30.0)
+# Paid Tier 1: 150 RPM for Pro, 1000 RPM for Flash
+photo_queue = PhotoQueue(max_concurrent=10, min_interval_seconds=0.5)

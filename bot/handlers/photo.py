@@ -68,19 +68,8 @@ async def handle_photo(message: Message, bot: Bot):
 
     logger.info(f"Processing photo for user {user_id}. Context: {context}, Balance: {user['balance']}")
 
-    # Check queue size
-    queue_size = photo_queue.get_queue_size()
-    if queue_size > 0:
-        queue_msg = await message.answer(
-            f"⏳ Фото добавлено в очередь обработки\n\n"
-            f"📊 Позиция в очереди: {queue_size + 1}\n"
-            f"⏱ Примерное время ожидания: ~{queue_size * 30} секунд"
-        )
-        await asyncio.sleep(2)  # Show queue message for 2 seconds
-        await queue_msg.delete()
-
-    # Send "analyzing" message
-    processing_msg = await message.answer("🔍 Анализирую фото...")
+    # Send "checking" message
+    processing_msg = await message.answer("🔍 Проверяю фото...")
 
     try:
         # Download photo
@@ -91,17 +80,18 @@ async def handle_photo(message: Message, bot: Bot):
         photo_data = photo_bytes.read()
         logger.info(f"Photo downloaded successfully. Size: {len(photo_data)} bytes")
 
-        # Analyze with AI using queue (rate-limited)
-        logger.info(f"Adding photo to processing queue for user {user_id}")
-        analysis = await photo_queue.process_photo(photo_data, context, ai_service)
-        logger.info(f"AI analysis completed for user {user_id}")
+        # STAGE 1: Quick relevance check (Flash model, 1-2 seconds, NO QUEUE)
+        logger.info(f"Checking relevance for user {user_id}")
+        relevance_result = await ai_service.check_relevance(photo_data, context)
+        logger.info(f"Relevance check completed: is_relevant={relevance_result.get('is_relevant')}")
 
         # Check if relevant
-        if not analysis.get('is_relevant'):
+        if not relevance_result.get('is_relevant'):
             # Not relevant - don't charge
-            logger.info(f"Photo from user {user_id} is not relevant. Joke: {analysis.get('joke', 'N/A')}")
+            logger.info(f"Photo from user {user_id} is not relevant. Joke: {relevance_result.get('joke', 'N/A')}")
+            joke_text = escape_markdown(relevance_result.get('joke', 'Фото не относится к строительству.'))
             await processing_msg.edit_text(
-                f"😄 {analysis.get('joke', 'Фото не относится к строительству.')}\n\n"
+                f"😄 {joke_text}\n\n"
                 "Присылай фото строительных работ для анализа.",
                 parse_mode="Markdown"
             )
@@ -117,7 +107,28 @@ async def handle_photo(message: Message, bot: Bot):
             logger.info(f"Non-relevant photo logged for user {user_id}")
             return
 
-        logger.info(f"Photo is relevant. Defects found: {len(analysis.get('items', []))}")
+        # STAGE 2: Photo is relevant! Update message and proceed with detailed analysis
+        logger.info(f"Photo is relevant. Starting detailed analysis.")
+        await processing_msg.edit_text(
+            "✅ **Фото строительное!**\n\n"
+            "🔍 Начинаю детальный анализ дефектов...",
+            parse_mode="Markdown"
+        )
+
+        # Check queue size and show if needed
+        queue_size = photo_queue.get_queue_size()
+        if queue_size > 0:
+            await processing_msg.edit_text(
+                "✅ **Фото строительное!**\n\n"
+                f"📊 Позиция в очереди: {queue_size + 1}\n"
+                f"⏱ Начну анализ через ~{queue_size} секунд...",
+                parse_mode="Markdown"
+            )
+
+        # Detailed analysis with queue (Pro model, 10-30 seconds, QUEUED)
+        logger.info(f"Adding photo to processing queue for detailed analysis")
+        analysis = await photo_queue.process_photo(photo_data, context, ai_service)
+        logger.info(f"Detailed analysis completed. Defects found: {len(analysis.get('items', []))}")
 
         # Deduct credit
         await db.update_balance(user_id, -1)

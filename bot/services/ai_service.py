@@ -82,6 +82,129 @@ class AIService:
 
         logger.info(f"AI Service initialized. Fast model: {config.GEMINI_FAST_MODEL}, Analysis model: {config.GEMINI_ANALYSIS_MODEL}")
 
+    async def check_relevance(self, photo_bytes: bytes, context: str = None) -> Dict[str, Any]:
+        """
+        Quick relevance check using Flash model (1-2 seconds)
+
+        Args:
+            photo_bytes: Photo binary data
+            context: User-provided context
+
+        Returns:
+            Dictionary with is_relevant and joke (if not relevant)
+        """
+        try:
+            logger.info(f"Quick relevance check. Context: {context}, Photo size: {len(photo_bytes)} bytes")
+
+            # Load image
+            image = Image.open(io.BytesIO(photo_bytes))
+            logger.info(f"Image loaded. Size: {image.size}, Format: {image.format}")
+
+            # Read settings
+            settings = None
+            if config.GOOGLE_SETTINGS_DOC_ID:
+                try:
+                    settings = settings_service.parse_ai_settings(config.GOOGLE_SETTINGS_DOC_ID)
+                except Exception as e:
+                    logger.warning(f"Failed to read settings, using defaults: {e}")
+
+            # Prepare model and prompt
+            if settings:
+                relevance_model_name = settings['relevance_model']
+                relevance_model = genai.GenerativeModel(
+                    relevance_model_name,
+                    generation_config={"temperature": 0.4, "response_mime_type": "application/json"}
+                )
+                system_prompt = settings['relevance_prompt'] if settings['relevance_prompt'] else self.SYSTEM_PROMPT
+            else:
+                relevance_model = self.fast_model
+                relevance_model_name = config.GEMINI_FAST_MODEL
+                system_prompt = self.SYSTEM_PROMPT
+
+            logger.info(f"Checking relevance with {relevance_model_name}...")
+            relevance_prompt = f"Контекст: {context}\n\nПроверь, является ли это фото строительным объектом. Если это кот, еда, селфи или не стройка - верни is_relevant: false с шуткой. Если это стройка - верни is_relevant: true." if context else "Проверь, является ли это фото строительным объектом."
+
+            response = relevance_model.generate_content(
+                [system_prompt, relevance_prompt, image],
+                request_options={"timeout": 120}
+            )
+
+            logger.info(f"Relevance check complete")
+            result = json.loads(response.text)
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Relevance check error: {str(e)}", exc_info=True)
+            return {
+                "is_relevant": False,
+                "joke": "⚠️ Не удалось проверить фото. Попробуй еще раз.",
+                "error": str(e)
+            }
+
+    async def analyze_defects(self, photo_bytes: bytes, context: str = None) -> Dict[str, Any]:
+        """
+        Detailed defect analysis using Pro model (10-30 seconds)
+
+        Args:
+            photo_bytes: Photo binary data
+            context: User-provided context
+
+        Returns:
+            Dictionary with detailed analysis results
+        """
+        try:
+            logger.info(f"Detailed defect analysis. Context: {context}")
+
+            # Load image
+            image = Image.open(io.BytesIO(photo_bytes))
+
+            # Read settings
+            settings = None
+            if config.GOOGLE_SETTINGS_DOC_ID:
+                try:
+                    settings = settings_service.parse_ai_settings(config.GOOGLE_SETTINGS_DOC_ID)
+                except Exception as e:
+                    logger.warning(f"Failed to read settings, using defaults: {e}")
+
+            # Prepare model and prompt
+            if settings:
+                analysis_model_name = settings['analysis_model']
+                analysis_model = genai.GenerativeModel(
+                    analysis_model_name,
+                    generation_config={"temperature": 0.4, "response_mime_type": "application/json"}
+                )
+                system_prompt = settings['analysis_prompt'] if settings['analysis_prompt'] else self.SYSTEM_PROMPT
+            else:
+                analysis_model = self.analysis_model
+                analysis_model_name = config.GEMINI_ANALYSIS_MODEL
+                system_prompt = self.SYSTEM_PROMPT
+
+            logger.info(f"Analyzing defects with {analysis_model_name}...")
+            analysis_prompt = f"Контекст: {context}\n\nПроанализируй это фото согласно инструкции. Найди все дефекты." if context else "Проанализируй это фото согласно инструкции."
+
+            response = analysis_model.generate_content(
+                [system_prompt, analysis_prompt, image],
+                request_options={"timeout": 180}
+            )
+
+            logger.info(f"Defect analysis complete")
+            result = json.loads(response.text)
+            result['is_relevant'] = True  # Already checked by check_relevance
+
+            logger.info(f"Analysis complete. Defects found: {len(result.get('items', []))}")
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Defect analysis error: {str(e)}", exc_info=True)
+            return {
+                "is_relevant": True,
+                "items": [],
+                "expert_summary": None,
+                "error": str(e)
+            }
+
     async def analyze_photo(self, photo_bytes: bytes, context: str = None) -> Dict[str, Any]:
         """
         Analyze construction photo for defects using two-stage approach:
