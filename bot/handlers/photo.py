@@ -8,6 +8,7 @@ from bot.services.ai_service import ai_service
 from bot.services.google_service import google_service
 from bot.services.photo_storage_service import PhotoStorageService
 from bot.services import error_notifier
+from bot.utils.markdown_utils import escape_markdown
 from datetime import datetime
 import logging
 import config
@@ -188,7 +189,16 @@ async def handle_photo(message: Message, bot: Bot):
         )
 
         # Check for specific errors
-        if "429" in error_str or "exhausted" in error_str.lower() or "quota" in error_str.lower():
+        if "TimeoutError" in error_str or "timeout" in error_str.lower():
+            error_message = (
+                "⏳ **AI-анализ занял слишком много времени**\n\n"
+                "Возможно, фото слишком большое или сервис перегружен.\n\n"
+                "💡 Попробуй:\n"
+                "• Отправить фото меньшего размера\n"
+                "• Повторить попытку через 1-2 минуты\n\n"
+                "Твой баланс не изменился."
+            )
+        elif "429" in error_str or "exhausted" in error_str.lower() or "quota" in error_str.lower():
             error_message = (
                 "⏳ **Лимит AI-запросов исчерпан**\n\n"
                 "Сервис временно перегружен. Попробуй через 5-10 минут.\n\n"
@@ -223,8 +233,11 @@ async def handle_text(message: Message):
     context_text = message.text.strip()
     await db.set_context(user_id, context_text)
 
+    # Escape markdown characters in user input
+    safe_context = escape_markdown(context_text)
+
     await message.answer(
-        f"✅ Объект установлен: **{context_text}**\n\n"
+        f"✅ Объект установлен: **{safe_context}**\n\n"
         "Теперь присылай фото для анализа!\n\n"
         "💡 Все найденные дефекты будут записаны с этим контекстом.",
         parse_mode="Markdown"

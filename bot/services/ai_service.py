@@ -9,6 +9,7 @@ import io
 import logging
 import config
 from bot.services.settings_service import settings_service
+from bot.utils.markdown_utils import escape_markdown
 
 logger = logging.getLogger(__name__)
 
@@ -152,11 +153,10 @@ class AIService:
             logger.info(f"STAGE 1: Checking relevance with {relevance_model_name}...")
             relevance_prompt = f"Контекст: {context}\n\nПроверь, является ли это фото строительным объектом. Если это кот, еда, селфи или не стройка - верни is_relevant: false с шуткой. Если это стройка - верни is_relevant: true." if context else "Проверь, является ли это фото строительным объектом."
 
-            relevance_response = relevance_model.generate_content([
-                system_prompt_relevance,
-                relevance_prompt,
-                image
-            ])
+            relevance_response = relevance_model.generate_content(
+                [system_prompt_relevance, relevance_prompt, image],
+                request_options={"timeout": 120}  # 2 minutes timeout
+            )
 
             logger.info(f"Relevance check complete. Response length: {len(relevance_response.text)} chars")
             logger.debug(f"Fast model response: {relevance_response.text}")
@@ -172,11 +172,10 @@ class AIService:
             logger.info(f"STAGE 2: Photo is relevant. Starting detailed analysis with {analysis_model_name}...")
             analysis_prompt = f"Контекст: {context}\n\nПроанализируй это фото согласно инструкции. Найди все дефекты." if context else "Проанализируй это фото согласно инструкции."
 
-            analysis_response = analysis_model.generate_content([
-                system_prompt_analysis,
-                analysis_prompt,
-                image
-            ])
+            analysis_response = analysis_model.generate_content(
+                [system_prompt_analysis, analysis_prompt, image],
+                request_options={"timeout": 180}  # 3 minutes timeout for detailed analysis
+            )
 
             logger.info(f"Detailed analysis complete. Response length: {len(analysis_response.text)} chars")
             logger.debug(f"Analysis model response: {analysis_response.text}")
@@ -219,13 +218,18 @@ class AIService:
             Formatted message string
         """
         if not analysis.get("is_relevant"):
-            return f"😄 {analysis.get('joke', 'Фото не относится к строительству.')}"
+            # Escape joke text as it may contain special characters
+            joke_text = escape_markdown(analysis.get('joke', 'Фото не относится к строительству.'))
+            return f"😄 {joke_text}"
 
         items = analysis.get("items", [])
         summary = analysis.get("expert_summary", "")
 
+        # Escape context for safe Markdown
+        safe_context = escape_markdown(context) if context else 'Не указан'
+
         # Build message
-        msg = f"🏗 **Объект:** {context or 'Не указан'}\n\n"
+        msg = f"🏗 **Объект:** {safe_context}\n\n"
         msg += f"🚨 **Выявлено дефектов: {len(items)}**\n\n"
 
         # Add each defect
@@ -236,14 +240,22 @@ class AIService:
                 "Малозначительный": "ℹ️"
             }.get(item.get("criticality", ""), "❓")
 
-            msg += f"{idx}️⃣ **{item.get('defect', 'Неизвестный дефект')}** ({criticality_emoji} {item.get('criticality', 'Неизвестно')})\n"
-            msg += f"📍 *{item.get('location', 'Не указано')}*\n"
-            msg += f"📜 *{item.get('norm', 'Норма не указана')}*\n"
-            msg += f"🛠 {item.get('recommendation', 'Рекомендация не указана')}\n\n"
+            # Escape all AI-generated text for safe Markdown
+            defect_name = escape_markdown(item.get('defect', 'Неизвестный дефект'))
+            location = escape_markdown(item.get('location', 'Не указано'))
+            norm = escape_markdown(item.get('norm', 'Норма не указана'))
+            recommendation = escape_markdown(item.get('recommendation', 'Рекомендация не указана'))
+            criticality = escape_markdown(item.get('criticality', 'Неизвестно'))
 
-        # Add summary
+            msg += f"{idx}️⃣ **{defect_name}** ({criticality_emoji} {criticality})\n"
+            msg += f"📍 *{location}*\n"
+            msg += f"📜 *{norm}*\n"
+            msg += f"🛠 {recommendation}\n\n"
+
+        # Add summary (escape it too)
         if summary:
-            msg += f"📝 **Заключение:** {summary}\n\n"
+            safe_summary = escape_markdown(summary)
+            msg += f"📝 **Заключение:** {safe_summary}\n\n"
 
         msg += "✅ **Данные сохранены в таблицу!**"
 
