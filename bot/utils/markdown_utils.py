@@ -41,3 +41,26 @@ def safe_markdown_format(text: str, user_data: dict) -> str:
     escaped_data = {k: escape_markdown(str(v)) for k, v in user_data.items()}
 
     return text.format(**escaped_data)
+
+
+def escape_html(text: str) -> str:
+    """
+    Escape special HTML characters in user input
+
+    Args:
+        text: Text to escape
+
+    Returns:
+        Escaped text safe for HTML formatting
+    """
+    if not text:
+        return text
+
+    # Escape HTML special characters
+    text = text.replace('&', '&amp;')
+    text = text.replace('<', '&lt;')
+    text = text.replace('>', '&gt;')
+    text = text.replace('"', '&quot;')
+    text = text.replace("'", '&#x27;')
+
+    return text

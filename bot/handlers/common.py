@@ -7,7 +7,7 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from bot.database.models import db
 from bot.services.google_service import google_service
-from bot.utils.markdown_utils import escape_markdown
+from bot.utils.markdown_utils import escape_markdown, escape_html
 import config
 import logging
 
@@ -122,16 +122,15 @@ async def cmd_start(message: Message, command: CommandObject):
                 return
 
         # Show welcome message
-        balance_text = f"💳 Баланс: {user['balance']} фото"
-        # Escape context to prevent Markdown parsing errors
-        safe_context = escape_markdown(user['context_object']) if user['context_object'] else None
-        context_text = f"📍 Объект: {safe_context}" if safe_context else "📍 Объект не установлен. Используй /new"
+        # Use HTML instead of Markdown to avoid parsing issues
+        balance = user['balance']
+        context_display = escape_html(user['context_object']) if user['context_object'] else "не установлен"
 
         await message.answer(
             f"""👋 С возвращением!
 
-{balance_text}
-{context_text}
+💳 Баланс: {balance} фото
+📍 Объект: {context_display}
 
 Присылай фото для анализа или используй команды:
 /new - Сменить объект
@@ -139,9 +138,10 @@ async def cmd_start(message: Message, command: CommandObject):
 /table - Открыть таблицу
 /help - Помощь
 
-💬 [Сообщество](https://t.me/+unHOsuhOxmM2M2Ni) — задавай вопросы, предлагай фичи!
+💬 <a href="https://t.me/+unHOsuhOxmM2M2Ni">Сообщество</a> — задавай вопросы, предлагай фичи!
 🌐 Сайт: https://teamplan.ru""",
-            parse_mode="Markdown"
+            parse_mode="HTML",
+            disable_web_page_preview=True
         )
 
 
