@@ -91,9 +91,10 @@ async def cmd_start(message: Message, command: CommandObject):
             await message.answer(welcome_text, parse_mode="Markdown")
 
         except Exception as e:
+            error_msg = escape_markdown(str(e))
             await message.answer(
-                f"⚠️ Ошибка при создании таблицы: {e}\n\nПопробуй позже или обратись к администратору.",
-                parse_mode=None
+                f"⚠️ Ошибка при создании таблицы: {error_msg}\n\nПопробуй позже или обратись к администратору.",
+                parse_mode="Markdown"
             )
     else:
         # Show version immediately for existing users too
@@ -113,15 +114,18 @@ async def cmd_start(message: Message, command: CommandObject):
                     parse_mode="Markdown"
                 )
             except Exception as e:
+                error_msg = escape_markdown(str(e))
                 await message.answer(
-                    f"⚠️ Ошибка при создании таблицы: {e}\n\nПопробуй позже или обратись к администратору.",
-                    parse_mode=None
+                    f"⚠️ Ошибка при создании таблицы: {error_msg}\n\nПопробуй позже или обратись к администратору.",
+                    parse_mode="Markdown"
                 )
                 return
 
         # Show welcome message
         balance_text = f"💳 Баланс: {user['balance']} фото"
-        context_text = f"📍 Объект: {user['context_object']}" if user['context_object'] else "📍 Объект не установлен. Используй /new"
+        # Escape context to prevent Markdown parsing errors
+        safe_context = escape_markdown(user['context_object']) if user['context_object'] else None
+        context_text = f"📍 Объект: {safe_context}" if safe_context else "📍 Объект не установлен. Используй /new"
 
         await message.answer(
             f"""👋 С возвращением!
