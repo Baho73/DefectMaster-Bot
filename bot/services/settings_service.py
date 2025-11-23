@@ -76,6 +76,7 @@ class SettingsService:
         Parse AI settings from Google Docs document
 
         Expected format:
+        0.0.1
         ---
         RELEVANCE_MODEL: gemini-2.5-flash
         ANALYSIS_MODEL: gemini-2.5-pro
@@ -91,20 +92,30 @@ class SettingsService:
             document_id: Google Docs document ID
 
         Returns:
-            Dict with keys: relevance_model, analysis_model, relevance_prompt, analysis_prompt
+            Dict with keys: prompt_version, relevance_model, analysis_model, relevance_prompt, analysis_prompt
         """
         try:
             content = self.read_settings_document(document_id)
 
-            # Parse sections
-            sections = content.split('---')
-
             settings = {
-                'relevance_model': config.GEMINI_FAST_MODEL,  # defaults
+                'prompt_version': 'unknown',  # default
+                'relevance_model': config.GEMINI_FAST_MODEL,
                 'analysis_model': config.GEMINI_ANALYSIS_MODEL,
                 'relevance_prompt': None,
                 'analysis_prompt': None
             }
+
+            # Extract version from first line (before first ---)
+            if '---' in content:
+                version_section, rest = content.split('---', 1)
+                version_line = version_section.strip()
+                if version_line:
+                    # First non-empty line is the version
+                    settings['prompt_version'] = version_line.split('\n')[0].strip()
+                content = rest  # Use rest for parsing sections
+
+            # Parse sections
+            sections = content.split('---')
 
             for section in sections:
                 section = section.strip()
@@ -130,13 +141,14 @@ class SettingsService:
                     if prompt_text:
                         settings['analysis_prompt'] = prompt_text
 
-            logger.info(f"Parsed AI settings: models={settings['relevance_model']}, {settings['analysis_model']}")
+            logger.info(f"Parsed AI settings: version={settings['prompt_version']}, models={settings['relevance_model']}, {settings['analysis_model']}")
             return settings
 
         except Exception as e:
             logger.error(f"Error parsing AI settings: {e}")
             # Return defaults
             return {
+                'prompt_version': 'unknown',
                 'relevance_model': config.GEMINI_FAST_MODEL,
                 'analysis_model': config.GEMINI_ANALYSIS_MODEL,
                 'relevance_prompt': None,

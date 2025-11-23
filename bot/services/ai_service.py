@@ -80,7 +80,18 @@ class AIService:
             }
         )
 
-        logger.info(f"AI Service initialized. Fast model: {config.GEMINI_FAST_MODEL}, Analysis model: {config.GEMINI_ANALYSIS_MODEL}")
+        # Try to load prompt version from Google Doc
+        self.prompt_version = "unknown"
+        if config.GOOGLE_SETTINGS_DOC_ID:
+            try:
+                settings = settings_service.parse_ai_settings(config.GOOGLE_SETTINGS_DOC_ID)
+                self.prompt_version = settings.get('prompt_version', 'unknown')
+                logger.info(f"AI Service initialized. Fast: {config.GEMINI_FAST_MODEL}, Analysis: {config.GEMINI_ANALYSIS_MODEL}, Prompts: v{self.prompt_version}")
+            except Exception as e:
+                logger.warning(f"Failed to load prompt version: {e}")
+                logger.info(f"AI Service initialized. Fast: {config.GEMINI_FAST_MODEL}, Analysis: {config.GEMINI_ANALYSIS_MODEL}, Prompts: default")
+        else:
+            logger.info(f"AI Service initialized. Fast: {config.GEMINI_FAST_MODEL}, Analysis: {config.GEMINI_ANALYSIS_MODEL}, Prompts: default")
 
     async def check_relevance(self, photo_bytes: bytes, context: str = None) -> Dict[str, Any]:
         """
