@@ -1,5 +1,7 @@
 # DefectMaster Bot
 
+![CI](https://github.com/Baho73/DefectMaster-Bot/actions/workflows/ci.yml/badge.svg)
+
 Telegram-бот для автоматического выявления строительных дефектов по фотографиям с использованием AI (Google Gemini) и генерацией отчетов в Google Таблицах.
 
 ## Возможности
